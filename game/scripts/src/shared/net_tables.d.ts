@@ -17,4 +17,7 @@ declare interface CustomNetTableDeclarations {
         key_1: number;
         key_2: string;
     };
+    react_table:{
+        test: {}
+    }
 }

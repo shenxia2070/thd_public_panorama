@@ -1,0 +1,10 @@
+<root>
+    <styles>
+        <include src="./styles.less" />
+        <include src="file://{resources}/styles/custom_game/dots_test.css" />
+    </styles>
+    <scripts>
+        <include src="./script.tsx" />
+    </scripts>
+    <Panel class="root" hittest="false" />
+</root>

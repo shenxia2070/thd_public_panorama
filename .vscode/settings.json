@@ -6,11 +6,14 @@
         "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
     },
     "[javascript]": {
-        "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "[json]": {
         "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
     },
     "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
     "eslint.run": "onSave",
+    "[xml]": {
+        "editor.defaultFormatter": "DotJoshJohnson.xml"
+    },
 }
