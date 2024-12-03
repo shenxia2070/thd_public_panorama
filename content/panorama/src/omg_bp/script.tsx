@@ -1,32 +1,285 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { render, useGameEvent } from 'react-panorama-x';
 
 export const OMGBP = () => {
     // @ts-ignore
-    const BP_table = CustomNetTables.GetTableValue("react_table", "test")
-    const [count, setCount] = useState(0);
-    
+    const BP_table = CustomNetTables.GetTableValue('react_table', 'test');
+    const [Steate, setCount] = useState(5);
+    const team_player_number = 5;
+    const LocalPlayerInfo = Game.GetLocalPlayerInfo();
+    const [bp_list_all, set_bp_list_all] = useState<bp_list[] | undefined>(undefined);
+    const [State, setState] = useState(1); //1表示ban人时间，2表示选人时间,3表示展示时间
+    const null_show_box: show_box = { hero_name: ``, abi_name: ``, ult_name: `` };
+    const [BpListResult, setBpListResult] = useState<BpListResult>({
+      hakurei: {} as BpListResultHakurei,
+      moriya: {} as BpListResultMoriya,
+    });
+    // showBoxs,仅在前端使用,展示用
+    const [showBoxs, setShowBoxs] = useState<{
+      hakurei: show_box[] ;
+      moriya: show_box[] ;
+    }>({
+      hakurei: [null_show_box, null_show_box, null_show_box, null_show_box, null_show_box],
+      moriya: [null_show_box, null_show_box, null_show_box, null_show_box, null_show_box],
+    });
+    // console.log('OMGBP 11111111111111');
     // useEffect(() => {
     //     GameEvents.Subscribe("React_test", Click);
     // }, []);
 
-    useGameEvent('React_test', data => {
-        console.log('React_test ');
-        console.log(data);
-    },[])
-
-    function Click() {
-        console.log("clicked11111");
-        console.log(BP_table);
-        
-    }
-    return (
-        <>
-            {/* <Panel className='BP_HUD_box' onactivate={ () => Click()} >
-                <Label className='UI_Label' text={count} />
-            </Panel> */}
-        </>
+    useGameEvent(
+        'React_test',
+        data => {
+            console.log('React_test ');
+            // @ts-ignore
+            set_bp_list_all(data.data);
+        },
+        []
     );
+    useGameEvent(
+        'React_Change_State',
+        data => {
+            console.log('React_Change_State ');
+            //@ts-ignore
+            setState(data.data);
+        },
+        []
+    );
+    useEffect(() => {
+        console.log('useEffect, 执行一次1');
+        set_bp_list_all(undefined)
+        console.log(bp_list_all);
+        // console.log(Game.GetLocalPlayerInfo().player_team_id == DOTATeam_t.DOTA_TEAM_GOODGUYS);
+        GameEvents.SendCustomGameEventToServer('React_BP_Init', {data:'test1'});
+    }, []);
+    useEffect(() => {
+        console.log('bp_list_all变化');
+        // if (bp_list_all !== undefined) {
+        //     console.log(Object.keys(bp_list_all[1]['abi_list']));
+        //     console.log(Object.keys(bp_list_all[1]['abi_list']).length);
+        // }
+    }, [bp_list_all]);
+    useEffect(() => {
+        console.log('showBoxs变化');
+        console.log(showBoxs);
+        // if (showBoxs !== undefined) {
+        //     console.log(Object.keys(showBoxs[1]['abi_list']).length);
+        // }
+        // GameEvents.SendCustomGameEventToServer('ChangeResult', {data:null});
+    }, [showBoxs]);
+
+    function ClickHeroList(Player_box_index: number,key_string : keyof show_box,index : number) {
+        console.log(`${Player_box_index}点击了hero_list的${index}`);
+        const key = bp_list_all![Player_box_index]['hero_list'][index]
+        console.log(key);
+        const key_table = {
+            hero_name: key,
+            abi_name: bp_list_all![Player_box_index]['abi_list'][index],
+            ult_name: bp_list_all![Player_box_index]['ult_list'][index],
+        };
+        console.log(key_table);
+        const null_show_box: show_box = { hero_name: ``, abi_name: ``, ult_name: `` };
+        if (Game.GetLocalPlayerInfo().player_team_id == DOTATeam_t.DOTA_TEAM_GOODGUYS) {
+            setShowBoxs({
+                ...showBoxs,
+                hakurei: [...showBoxs.hakurei.slice(0, Player_box_index), key_table, ...showBoxs.hakurei.slice(Player_box_index + 1)],
+            })
+        }
+        GameEvents.SendCustomGameEventToServer('ChangeResult', {data:showBoxs});
+    }
+    function ClickAbiList(Player_box_index: number,key_string : keyof show_box,index : number) {
+        console.log(`${Player_box_index}点击了abilist的${index}`);
+        const key = bp_list_all![Player_box_index]['abi_list'][index]
+        console.log(key);
+        const key_table = {
+            hero_name: bp_list_all![Player_box_index]['hero_list'][index],
+            abi_name: key,
+            ult_name: bp_list_all![Player_box_index]['ult_list'][index],
+        };
+        if (Game.GetLocalPlayerInfo().player_team_id == DOTATeam_t.DOTA_TEAM_GOODGUYS) {
+            setShowBoxs({
+                ...showBoxs,
+                hakurei: [...showBoxs.hakurei.slice(0, Player_box_index), key_table, ...showBoxs.hakurei.slice(Player_box_index + 1)],
+            })
+        }
+    }
+    function ClickUltList(Player_box_index: number,key_string : keyof show_box,index : number) {
+        console.log(`${Player_box_index}点击了ultlist的${index}`);
+        const key = bp_list_all![Player_box_index]['ult_list'][index]
+        console.log(key);
+        const key_table = {
+            hero_name: bp_list_all![Player_box_index]['hero_list'][index],
+            abi_name: bp_list_all![Player_box_index]['abi_list'][index],
+            ult_name: key,
+        };
+        if (Game.GetLocalPlayerInfo().player_team_id == DOTATeam_t.DOTA_TEAM_GOODGUYS) {
+            setShowBoxs({
+                ...showBoxs,
+                hakurei: [...showBoxs.hakurei.slice(0, Player_box_index), key_table, ...showBoxs.hakurei.slice(Player_box_index + 1)],
+            })
+        }
+    }
+    return useMemo(
+        () => (
+            <>
+                <Panel className="BP_HUD_box">
+                    {new Array(team_player_number).fill(0).map((item, index) => {
+                        return bp_list_all && <Player_box key={index+1} Player_box_index={index+1} bp_list_all={bp_list_all} State={State} showBoxs = {showBoxs} setShowBoxs = {setShowBoxs} />;
+                    })}
+                </Panel>
+            </>
+        ),
+        [bp_list_all,State,showBoxs]
+    );
+
+    function Player_box({Player_box_index, bp_list_all, State,showBoxs,setShowBoxs}: { Player_box_index: number; bp_list_all: bp_list[]; State: number,showBoxs: { hakurei: show_box[]; moriya: show_box[]; },setShowBoxs: React.Dispatch<React.SetStateAction<{ hakurei: show_box[]; moriya: show_box[]; }>> }){
+        // console.log('Player_box'+Player_box_index);
+        
+        const screen_width = Game.GetScreenWidth();
+        const screen_height = Game.GetScreenHeight();
+        const scale = screen_width / screen_height;
+        let hero_list: string[];
+        let abi_list: string[];
+        let ult_list: string[];
+        const hero_name: keyof show_box = 'hero_name';
+        const abi_name: keyof show_box = 'abi_name';
+        const ult_name: keyof show_box = 'ult_name';
+        // 计算每个Panel的左边距
+        var panel_width = 300; // Panel的宽度固定为300px
+        // 根据不同的分辨率进行调整
+        if (scale == 1.6) {
+            panel_width = 340;
+        } else if (Math.round(scale * 100) / 100 == 1.78) {
+            panel_width = 300;
+        } else if (Math.round(scale * 100) / 100 == 2.33) {
+            panel_width = 170;
+        }
+        // console.log(`player_box${Player_box_index}`);
+        if (bp_list_all !== undefined) {
+            // console.log(bp_list_all[Player_box_index]);
+            hero_list = bp_list_all[Player_box_index]['hero_list'];
+            abi_list = bp_list_all[Player_box_index]['abi_list'];
+            ult_list = bp_list_all[Player_box_index]['ult_list'];
+            
+            //遍历abi_list
+            for (let i = 0; i < Object.keys(hero_list).length; i++) {
+                const element = Object.keys(hero_list)[i]
+            }
+            // console.log(showBoxs.hakurei[Player_box_index-1].hero_name);
+        } else {
+            return null;
+        }
+        
+        var margin_left = (screen_width - panel_width * 5) / 6; // 计算每个Panel的左边距
+        return (
+            <>
+                <Panel className="Player_box" style={{ marginLeft: `${margin_left}px` }}>
+                    <Panel className="my_player_data">
+                        <DOTAAvatarImage className="AvatarImage" style={State==2?{marginTop:'20%'}:{}} steamid={'local'} />
+                        <DOTAUserName className="Player_box_element" style={{ color: '#C0C0C0' }} steamid={LocalPlayerInfo.player_steamid} />
+                    </Panel>
+                    <Panel className="show_box">
+                        <Panel className="hero_img_box">
+                        </Panel>
+                        <Panel className="ability_info">
+                            
+                            <Panel className="hero_name">
+                                <Label className="sub_label" text={$.Localize(`#${showBoxs.hakurei[Player_box_index-1].hero_name}`)} style={{ color: '#C0C0C0' }} ></Label>
+                            </Panel>
+                            <Panel className="show_ability_box">
+                                <Panel className="ability">
+                                    <DOTAAbilityImage className="ability" abilityname={`item_1`} style={{ width: '100%', height: '100%' }} />
+                                </Panel>
+                                <Panel className="ability">
+                                    <DOTAAbilityImage className="ability" abilityname={`item_1`} style={{ width: '100%', height: '100%' }} />
+                                </Panel>
+                            </Panel>
+                        </Panel>
+                    </Panel>
+                    <Panel className="select_box div_1">
+                        <Label className="sub_label" style={{color:'#C0C0C0'}} text={'少女'}></Label>
+                        {
+                            new Array(6).fill(0).map((item, index) => {
+                                return (
+                                    hero_list[index+1] && <Image key = {index+1} className='hero_image' src={`s2r://panorama/images/heroes/thd2_${hero_list[index+1]}_png.vtex`} onactivate={()=>ClickHeroList(Player_box_index,hero_name,index+1)}></Image>
+                                );
+                            })
+                        }
+                    </Panel>
+                    <Panel className="select_box div_2">
+                        <Label className="sub_label" style={{color:'#C0C0C0'}} text={'普通技能'}></Label>
+                        {
+                            new Array(8).fill(0).map((item, index) => {
+                                return (
+                                    abi_list[index+1] && <DOTAAbilityImage key = {index+1} className='ability' abilityname={abi_list[index+1]} onactivate={()=>ClickAbiList(Player_box_index,abi_name,index+1)}></DOTAAbilityImage>
+                                );
+                            })
+                        }
+                    </Panel>
+                    <Panel className="select_box div_3">
+                        <Label className="sub_label" style={{color:'#C0C0C0'}} text={'终极技能'}></Label>
+                        {
+                            new Array(8).fill(0).map((item, index) => {
+                                return (
+                                    ult_list[index+1] && <DOTAAbilityImage key = {index+1} className='ability' abilityname={ult_list[index+1]} onactivate={()=>ClickUltList(Player_box_index,ult_name,index+1)}></DOTAAbilityImage>
+                                );
+                            })
+                        }
+                    </Panel>
+
+                    <Panel className="enemy_player_data">
+
+                    </Panel>
+                </Panel>
+            </>
+        );
+    }
 };
 
 render(<OMGBP />, $.GetContextPanel());
+
+interface bp_list {
+    hero_list: Array<string>;
+    abi_list: Array<string>;
+    ult_list: Array<string>;
+}
+
+
+interface show_box {
+  hero_name: string;
+  abi_name: string;
+  ult_name: string;
+}
+
+interface React_BP_List {
+    hakurei: Array<show_box>;
+    moriya: Array<show_box>;
+}
+interface BpListResultHakureiItem {
+  PlayerID: number;
+  BanList: {};
+  PickList: {};
+  ChangeReceiveList: {};
+  Extra: {};
+}
+
+interface BpListResultHakurei {
+  [key: number]: BpListResultHakureiItem;
+}
+
+interface BpListResultMoriyaItem {
+  PlayerID: number;
+  BanList: {};
+  PickList: {};
+  ChangeReceiveList: {};
+  Extra: {};
+}
+
+interface BpListResultMoriya {
+  [key: number]: BpListResultMoriyaItem;
+}
+
+interface BpListResult {
+  hakurei: BpListResultHakurei;
+  moriya: BpListResultMoriya;
+}

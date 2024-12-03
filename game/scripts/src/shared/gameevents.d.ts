@@ -8,4 +8,7 @@ declare interface CustomGameEventDeclarations {
         foo: number;
         bar: string;
     };
+    
+    React_BP_Init:{data:any}
+    ChangeResult:{data:any}
 }
