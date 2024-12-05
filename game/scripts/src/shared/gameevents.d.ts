@@ -11,4 +11,5 @@ declare interface CustomGameEventDeclarations {
     
     React_BP_Init:{data:any}
     ChangeResult:{data:any}
+    ReactToLua:{data:any}
 }
