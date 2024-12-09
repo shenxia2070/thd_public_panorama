@@ -72,7 +72,7 @@ export const OMGBP = () => {
         // console.log(bp_list_all);
         // console.log(Game.GetLocalPlayerInfo().player_team_id == DOTATeam_t.DOTA_TEAM_GOODGUYS);
         
-        GameEvents.SendCustomGameEventToServer('React_BP_Init', { data: 'test1' });
+        // GameEvents.SendCustomGameEventToServer('React_BP_Init', { data: 'test1' });
     }, []);
     useEffect(() => {
         console.log('BpListResult变化');
@@ -114,7 +114,7 @@ export const OMGBP = () => {
             // }
             var PlayerData = BpListResultAll[team_tag][Player_box_index][BP_tag];
             PlayerData[key_string] = index;
-            console.log(`这是${BP_tag}的${key_string}的${index}`);
+            console.log(`这是${team_tag}队伍的${BP_tag}的${key_string}的${index}`);
             
             console.log(PlayerData);
 
@@ -146,6 +146,11 @@ export const OMGBP = () => {
     if (Game.GetMapInfo().map_name == `maps/dota.vpk`) {
         return null
     }
+    // @ts-ignore
+    const dotaHud = $.GetContextPanel().GetParent().GetParent().GetParent().GetParent()
+    const GameModeLabel = dotaHud!.FindChildTraverse("GameModeLabel")
+    // @ts-ignore
+    GameModeLabel.text = "BAN人时间"
     if(LocalPlayerInfo.player_id != -1 && LocalPlayerInfo.player_id != 23 && Game.GetMapInfo().map_name != `maps/dota.vpk`){
         invis_aim_panel()
         return useMemo(
@@ -543,7 +548,7 @@ export const OMGBP = () => {
     }
 };
 
-render(<OMGBP />, $.GetContextPanel());
+// render(<OMGBP />, $.GetContextPanel());
 
 interface bp_list {
     hero_list: Array<string>;
