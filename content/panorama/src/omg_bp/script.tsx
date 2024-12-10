@@ -4,7 +4,7 @@ import { render, useGameEvent } from 'react-panorama-x';
 export const OMGBP = () => {
     // @ts-ignore
     const BP_table = CustomNetTables.GetTableValue('react_table', 'test');
-    const [Steate, setCount] = useState(5);
+    const [Count, setCount] = useState(0);
     const team_player_number = 5;
     const LocalPlayerInfo = Game.GetLocalPlayerInfo();
     const [bp_list_all, set_bp_list_all] = useState<bp_list[] | undefined>(undefined);
@@ -24,14 +24,22 @@ export const OMGBP = () => {
         moriya: [null_show_box, null_show_box, null_show_box, null_show_box, null_show_box],
     });
     useGameEvent(
-        'React_test',
-        data => {
+        'React_BP_Init',
+        data => {   
             // @ts-ignore
             set_bp_list_all(data.bp_list_all);
             // @ts-ignore
             setBpListResultAll(data.bp_list_result);
             // @ts-ignore
             setState(data.react_table_state);
+        },
+        []
+    );
+    useGameEvent(
+        'LuaDataToReact',
+        data => {   
+            // @ts-ignore
+            setBpListResultAll(data.bp_list_result);
         },
         []
     );
@@ -63,23 +71,20 @@ export const OMGBP = () => {
         []
     );
     useEffect(() => {
+        console.log('ReactToLua Init1()');
+        //测试以及掉线玩家重连初始化界面
+        GameEvents.SendCustomGameEventToServer('ReactToLua', { data: 'test' })
+    },[]);
+    useEffect(() => {
         console.log('State 变化');
         console.log(State);
     }, [State]);
     useEffect(() => {
-        console.log('useEffect, 执行一次11');
-        set_bp_list_all(undefined);
-        // console.log(bp_list_all);
-        // console.log(Game.GetLocalPlayerInfo().player_team_id == DOTATeam_t.DOTA_TEAM_GOODGUYS);
-        
-        // GameEvents.SendCustomGameEventToServer('React_BP_Init', { data: 'test1' });
-    }, []);
-    useEffect(() => {
         console.log('BpListResult变化');
-        console.log(BpListResultAll.hakurei);
+        console.log(BpListResultAll);
     }, [BpListResultAll]);
 
-    const ClickList = useCallback((Player_box_index: number, key_string: keyof BPList, index: number, PlayerID: number, panel: Panel) => {
+    function ClickList (Player_box_index: number, key_string: keyof BPList, index: number, PlayerID: number, panel: Panel) {
         console.log(`${Player_box_index}点击了${key_string}的${index}`);
         // 首先判断id, 是否是自己的盒子
         const LocalPlayerID = Game.GetLocalPlayerID();
@@ -120,10 +125,10 @@ export const OMGBP = () => {
 
             GameEvents.SendCustomGameEventToServer('ChangeResult', { data: { PlayerData: PlayerData, team: team } });
         }
-    },[BpListResultAll, State]);
+    }
     
 
-    const SendSwapButton = useCallback(( Player_box_index: number, LocalPlayerBoxIndex: number,team_tag: keyof BpListResultAll) => {
+    function SendSwapButton( Player_box_index: number, LocalPlayerBoxIndex: number,team_tag: keyof BpListResultAll) {
         console.log(`${LocalPlayerBoxIndex}号盒子,ID为点击了${Player_box_index}号盒子的交换按钮`);
         let ChangeReceive = BpListResultAll[team_tag][Player_box_index].ChangeReceiveList;
         // console.log(ChangeReceive.length);
@@ -141,7 +146,7 @@ export const OMGBP = () => {
         
         const team = Game.GetLocalPlayerInfo().player_team_id;
         GameEvents.SendCustomGameEventToServer('ChangeReceive', { data: {Player_box_index:Player_box_index, NewChangeReceive: NewChangeReceive, team: team } });
-    },[BpListResultAll])
+    }
     
     if (Game.GetMapInfo().map_name == `maps/dota.vpk`) {
         return null
@@ -364,7 +369,7 @@ export const OMGBP = () => {
                                 hero_list[index + 1] && (
                                     <Image
                                         key={index + 1}
-                                        className={`hero_image ${enemy_ban_hero_number == index + 1 ? 'banned' : ''} ${(State == 1 && my_ban_hero_number == index + 1) ? 'banned' : ''} ${(State == 2 && my_pick_hero_number == index +1) ? "select_ability" : ''}`}
+                                        className={`hero_image ${(State == 2 && enemy_ban_hero_number == index + 1) ? 'banned' : ''} ${(State == 1 && my_ban_hero_number == index + 1) ? 'banned' : ''} ${(State == 2 && my_pick_hero_number == index +1) ? "select_ability" : ''}`}
                                         src={`s2r://panorama/images/heroes/thd2_${hero_list[index + 1]}_png.vtex`}
                                         onactivate={panel => ClickList(Player_box_index, key_hero, index + 1, PlayerID, panel)}
                                     ></Image>
@@ -379,7 +384,7 @@ export const OMGBP = () => {
                                 abi_list[index + 1] && (
                                     <DOTAAbilityImage
                                         key={index + 1}
-                                        className={`ability ${enemy_ban_abi_number == index + 1 ? 'banned' : ''} ${(State == 1 && my_ban_abi_number == index + 1) ? 'banned' : ''} ${(State == 2 && my_pick_abi_number == index + 1) ? "select_ability" : ''}`}
+                                        className={`ability ${(State == 2 && enemy_ban_abi_number == index + 1) ? 'banned' : ''} ${(State == 1 && my_ban_abi_number == index + 1) ? 'banned' : ''} ${(State == 2 && my_pick_abi_number == index + 1) ? "select_ability" : ''}`}
                                         showtooltip={true}
                                         abilityname={abi_list[index + 1]}
                                         onactivate={panel => ClickList(Player_box_index, key_abi, index + 1, PlayerID, panel)}
@@ -395,7 +400,7 @@ export const OMGBP = () => {
                                 ult_list[index + 1] && (
                                     <DOTAAbilityImage
                                         key={index + 1}
-                                        className={`ability ${enemy_ban_ult_number == index + 1 ? 'banned' : ''} ${(State == 1 && my_ban_ult_number == index + 1) ? 'banned' : ''} ${(State == 2 && my_pick_ult_number == index + 1) ? "select_ability" : ''}`}
+                                        className={`ability ${(State == 2 && enemy_ban_ult_number == index + 1) ? 'banned' : ''} ${(State == 1 && my_ban_ult_number == index + 1) ? 'banned' : ''} ${(State == 2 && my_pick_ult_number == index + 1) ? "select_ability" : ''}`}
                                         showtooltip={true}
                                         abilityname={ult_list[index + 1]}
                                         onactivate={panel => ClickList(Player_box_index, key_ult, index + 1, PlayerID, panel)}
@@ -548,7 +553,7 @@ export const OMGBP = () => {
     }
 };
 
-// render(<OMGBP />, $.GetContextPanel());
+render(<OMGBP />, $.GetContextPanel());
 
 interface bp_list {
     hero_list: Array<string>;
