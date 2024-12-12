@@ -14,4 +14,5 @@ declare interface CustomGameEventDeclarations {
     ChangeReceive:{data:any}
     AgreeReceive:{data:any}
     ReactToLua:{data:any}
+    ReactFlash:{data:any}
 }

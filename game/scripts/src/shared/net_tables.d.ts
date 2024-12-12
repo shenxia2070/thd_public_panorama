@@ -18,6 +18,9 @@ declare interface CustomNetTableDeclarations {
         key_2: string;
     };
     react_table:{
-        test: {}
+        react_table_state: {}
+        bp_list_all: {}
+        bp_list_result: {}
+        test:{}
     }
 }
