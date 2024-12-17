@@ -21,6 +21,25 @@ declare interface CustomNetTableDeclarations {
         react_table_state: {}
         bp_list_all: {}
         bp_list_result: {}
-        test:{}
+        test:{
+            hakurei: BpListResult;
+            moriya: BpListResult;
+        }
     }
+}
+
+interface BpListResult {
+    [key: number]: BpListResultItem;
+}
+interface BpListResultItem {
+    PlayerID: PlayerID;
+    BanList: BPList;
+    PickList: BPList;
+    ChangeReceiveList: number[];
+    Extra: {};
+}
+interface BPList {
+    ['hero']: number;
+    ['abi']: number;
+    ['ult']: number;
 }
