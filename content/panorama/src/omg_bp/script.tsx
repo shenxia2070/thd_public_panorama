@@ -1,13 +1,14 @@
-import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
-import { render, useGameEvent, useNetTableKey, useNetTableValues } from 'react-panorama-x';
+import { useEffect, useMemo, useState } from 'react';
+import { render, useGameEvent, useNetTableValues } from 'react-panorama-x';
 export const OMGBP = () => {
+    if (Game.GetMapInfo().map_name == `maps/dota.vpk`) {return null;}
     const [State, setState] = useState(1); //1表示ban人时间，2表示选人时间,3表示展示时间
     const [BpListAll, setBpListALl] = useState<bp_list[] | undefined>(undefined);
     const [BpListResultAll, setBpListResultAll] = useState<BpListResultAll>({
         hakurei: {} as BpListResult,
         moriya: {} as BpListResult,
     });
-
+    
     const LocalPlayerInfo = Game.GetLocalPlayerInfo();
     const debounce = (func: (...args: any[]) => void, wait: number) => {
         let timeout: any;
@@ -105,17 +106,22 @@ export const OMGBP = () => {
         },
         50 // 0.05秒
     );
-    const clickList = (Player_box_index: number, key_string: keyof BPList, index: number, PlayerID: number, panel: Panel, State: number) => {
-        // console.log(`${Player_box_index}点击了${key_string}的${index}`);
+    const clickList = (Player_box_index: number, key_string: keyof BPList, index: number, panel: Panel) => {
         // 首先判断id, 是否是自己的盒子
         const LocalPlayerID = Game.GetLocalPlayerID();
         const team = Game.GetLocalPlayerInfo().player_team_id;
+        
         // console.log(LocalPlayerID);
         // console.log(`${PlayerID}点击了hero_list的${index}`);
         // console.log(PlayerID);
+        const BpListResultAll = CustomNetTables.GetTableValue('react_table', 'bp_list_result') as BpListResultAll;
+        //@ts-ignore
+        const State = CustomNetTables.GetTableValue('react_table', 'react_table_state')[1] as number;
         let team_tag: keyof BpListResultAll = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
         let enemy_team_tag: keyof BpListResultAll = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'moriya' : 'hakurei';
         let BP_tag: keyof BpListResultItem = 'BanList';
+        const PlayerID = BpListResultAll[team_tag][Player_box_index].PlayerID
+        console.log(`${Player_box_index}点击了${key_string}的${index},PlayerID是${PlayerID}`);
         console.log('State 是 : ' + State);
 
         if (State == 1) {
@@ -133,9 +139,13 @@ export const OMGBP = () => {
             // 若是自己的盒子, 则发送数据到lua , 修改后台数据
             let PlayerData = BpListResultAll[team_tag][Player_box_index][BP_tag];
             PlayerData[key_string] = index;
-            console.log(`这是${team_tag}队伍的${BP_tag}的${key_string}的${index}`);
-
-            console.log(PlayerData);
+            console.log(`这是${Player_box_index}号盒子${team_tag}队伍的${BP_tag}的${key_string}的${index}`);
+            
+            // console.log('敌人ban的');
+            // console.log(BpListResultAll[enemy_team_tag][Player_box_index].BanList);
+            
+            // console.log('自己选的');
+            // console.log(PlayerData);
             // 若点击的是被ban的数据, 则不发送
             if (index == BpListResultAll[enemy_team_tag][Player_box_index].BanList[key_string] && State == 2) {
                 console.log('点击的是被ban的数据');
@@ -173,9 +183,6 @@ export const OMGBP = () => {
         GameEvents.SendCustomGameEventToServer('AgreeReceive', { data: { Player_box_index: Player_box_index, index: index, team: team } });
     };
 
-    if (Game.GetMapInfo().map_name == `maps/dota.vpk`) {
-        return null;
-    }
     // @ts-ignore
     const dotaHud = $.GetContextPanel().GetParent().GetParent().GetParent().GetParent();
     const GameModeLabel = dotaHud!.FindChildTraverse('GameModeLabel');
@@ -201,7 +208,7 @@ export const OMGBP = () => {
                     <Panel className="BP_HUD_box">
                         {new Array(5).fill(0).map((item, index) => {
                             return (
-                                BpListAll && <PlayerBox key={index + 1} Player_box_index={index + 1} bp_list_all={BpListAll} State={State} />
+                                BpListAll && <PlayerBox key={`PlayerBox${index + 1}`} Player_box_index={index + 1} bp_list_all={BpListAll}  />
                             );
                         })}
                     </Panel>
@@ -210,65 +217,22 @@ export const OMGBP = () => {
     } else {
         //观战
 
-        const MemoizedMyTestParent = React.memo(MyTestParent);
-        const MemoizedMyChild = React.memo(MyChild);
         return (
             <>
                 <Panel style={{ width: '100%', height: '500px', backgroundColor: '#252525', marginTop: '20%', flowChildren: 'down' }}>
-                    {/* <Label style={{width: '100%', height: '50px',verticalAlign: 'center', textAlign: 'center', fontSize: '80px', color: '#fff'}} text={`${State}`}></Label> */}
-                    <MyTestParent State={State}></MyTestParent>
-                    <MyChild></MyChild>
+                    <Label style={{width: '100%', height: '50px',verticalAlign: 'center', textAlign: 'center', fontSize: '80px', color: '#fff'}} text={`${State}`}></Label>
                 </Panel>
             </>
         );
     }
 
-    function MyChild() {
-        // console.log('MyChild渲染');
-        // @ts-ignore
-        const Test = useNetTableValues('react_table')?.test.hakurei[1].Extra;
-        // @ts-ignore
-        // console.log(Test.data);
 
-        return (
-            // @ts-ignore
-            <Label
-                style={{ width: '100%', height: '50px', verticalAlign: 'center', textAlign: 'center', fontSize: '80px', color: '#fff' }}
-                text={`${1}`}
-            ></Label>
-        );
-    }
-    function MyTestParent({ State }: { State: number }) {
-        const team = Game.GetLocalPlayerInfo().player_team_id;
-        const team_tag = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
-        // @ts-ignore
-        // console.log(Test.data);
-        // @ts-ignore
-        const [LocalTest, setLocalTest] = useState(Test.data);
-        useEffect(() => {
-            // console.log('Test变化');
-            // console.log(Test);
-            // @ts-ignore
-            if (Test.data != LocalTest) {
-                // @ts-ignore
-                setLocalTest(Test.data);
-            }
-        }, [team]);
-        return useMemo(() => {
-            console.log('MyTestParent渲染');
-            return (
-                <Label
-                    style={{ width: '100%', height: '50px', verticalAlign: 'center', textAlign: 'center', fontSize: '80px', color: '#fff' }}
-                    text={`${LocalTest}`}
-                ></Label>
-            );
-        }, [LocalTest]);
-    }
-
-    function PlayerBox({ Player_box_index, bp_list_all, State }: { Player_box_index: number; bp_list_all: bp_list[]; State: number }) {
+    function PlayerBox({ Player_box_index, bp_list_all }: { Player_box_index: number; bp_list_all: bp_list[]}) {
         // @ts-ignore
         var PlayerID: PlayerID;
         var EnemyID: PlayerID;
+        // @ts-ignore
+        const State = useNetTableValues('react_table')?.react_table_state[1] as number;
         const BpListResultAll = useNetTableValues('react_table')?.bp_list_result as BpListResultAll;
         if (BpListResultAll == undefined) {
             return null;
@@ -278,15 +242,6 @@ export const OMGBP = () => {
         const team = Game.GetLocalPlayerInfo().player_team_id;
         const team_tag: keyof BpListResultAll = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
         const enemy_team_tag: keyof BpListResultAll = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'moriya' : 'hakurei';
-        var BP_tag: keyof BpListResultItem = 'BanList';
-        // var State = 2;
-        if (State == 1) {
-            BP_tag = 'BanList';
-        } else if (State == 2) {
-            BP_tag = 'PickList';
-        } else if (State == 3) {
-            BP_tag = 'PickList';
-        }
         if (BpListResultAll[team_tag][Player_box_index] != undefined) {
             // console.log(BpListResultAll[team_tag][Player_box_index].PlayerID);
             PlayerID = BpListResultAll[team_tag][Player_box_index].PlayerID;
@@ -323,28 +278,11 @@ export const OMGBP = () => {
             hero_list = bp_list_all[Player_box_index]['hero_list'];
             abi_list = bp_list_all[Player_box_index]['abi_list'];
             ult_list = bp_list_all[Player_box_index]['ult_list'];
-
-            //遍历abi_list
-            for (let i = 0; i < Object.keys(hero_list).length; i++) {
-                const element = Object.keys(hero_list)[i];
-            }
-            // console.log(showBoxs[team_tag][Player_box_index-1].hero_name);
         } else {
             return null;
         }
         // console.log('测试=================');
-        let my_hero_name = hero_list[BpListResultAll[team_tag][Player_box_index][BP_tag].hero];
-        let my_abi_name = abi_list[BpListResultAll[team_tag][Player_box_index][BP_tag].abi];
-        let my_ult_name = ult_list[BpListResultAll[team_tag][Player_box_index][BP_tag].ult];
-        let enemy_hero_name = hero_list[BpListResultAll[enemy_team_tag][Player_box_index][BP_tag].hero];
-        let enemy_abi_name = abi_list[BpListResultAll[enemy_team_tag][Player_box_index][BP_tag].abi];
-        let enemy_ult_name = ult_list[BpListResultAll[enemy_team_tag][Player_box_index][BP_tag].ult];
-        if (State == 2) {
-            my_hero_name = hero_list[BpListResultAll[team_tag][Player_box_index][BP_tag].hero];
-            my_abi_name = abi_list[BpListResultAll[team_tag][Player_box_index][BP_tag].abi];
-            my_ult_name = ult_list[BpListResultAll[team_tag][Player_box_index][BP_tag].ult];
-        }
-
+        
         const my_ban_hero_number = BpListResultAll[team_tag][Player_box_index].BanList.hero;
         const my_ban_abi_number = BpListResultAll[team_tag][Player_box_index].BanList.abi;
         const my_ban_ult_number = BpListResultAll[team_tag][Player_box_index].BanList.ult;
@@ -359,180 +297,35 @@ export const OMGBP = () => {
         const enemy_pick_abi_number = BpListResultAll[enemy_team_tag][Player_box_index].PickList.abi;
         const enemy_pick_ult_number = BpListResultAll[enemy_team_tag][Player_box_index].PickList.ult;
 
+        
+        let my_hero_name = hero_list[my_ban_hero_number];
+        let my_abi_name = abi_list[my_ban_abi_number];
+        let my_ult_name = ult_list[my_ban_ult_number];
+        let enemy_hero_name = hero_list[enemy_ban_hero_number];
+        let enemy_abi_name = abi_list[enemy_ban_abi_number];
+        let enemy_ult_name = ult_list[enemy_ban_ult_number];
+        if (State != 1) {
+            my_hero_name = hero_list[my_pick_hero_number];
+            my_abi_name = abi_list[my_pick_abi_number];
+            my_ult_name = ult_list[my_pick_ult_number];
+            enemy_hero_name = hero_list[enemy_pick_hero_number];
+            enemy_abi_name = abi_list[enemy_pick_abi_number];
+            enemy_ult_name = ult_list[enemy_pick_ult_number];
+        }
+
         const ChangeReceiveList = Object.values(BpListResultAll.hakurei[Player_box_index].ChangeReceiveList);
 
         const { margin_left, margin_right } = getMargin(Player_box_index);
         return (
             <>
                 <Panel className="Player_box" style={{ marginLeft: margin_left, marginRight: margin_right }}>
-                    {<MyPlayerData key={`MyPlayerData_${Player_box_index}`} Player_box_index={Player_box_index} />}
-                    {<MyShowBox key={`ShowBox_${Player_box_index}`} Player_box_index={Player_box_index} />}
-                    <Panel className="select_box div_1" style={{visibility: State == 3 ? 'collapse' : 'visible'}}>
-                        <Label className="sub_label" style={{ color: '#C0C0C0' }} text={'少女'}></Label>
-                        {new Array(6).fill(0).map((item, index) => {
-                            
-                            let ban_class_name = '';
-                            let ability_class_name = '';
-                            if(State == 1 ){
-                                // Ban人状态下只显示自己ban的英雄
-                                if (my_ban_hero_number == index + 1) {
-                                    ban_class_name = 'banned';
-                                }
-                            }else if(State == 2){
-                                // Pick人状态下显示enemy ban的英雄
-                                if (enemy_ban_hero_number == index + 1) {
-                                    ban_class_name = 'banned';
-                                }
-                                // 显示自己pick的英雄
-                                if (my_pick_hero_number == index + 1) {
-                                    ability_class_name = 'select_ability';
-                                }
-                            }
-                            return (
-                                hero_list[index + 1] && (
-                                    <Image
-                                        key={index + 1}
-                                        id={`${key_hero}_${Player_box_index}_${index + 1}`}
-                                        className={`hero_image ${ban_class_name} ${ability_class_name}`}
-                                        src={`s2r://panorama/images/heroes/thd2_${hero_list[index + 1]}_png.vtex`}
-                                        onactivate={panel => clickList(Player_box_index, key_hero, index + 1, PlayerID, panel,State)}
-                                    ></Image>
-                                    // <HeroIcon key={index + 1}></HeroIcon>
-                                )
-                            );
-                        })}
-                    </Panel>
-                    {/* {<SelectBoxHero key={`SelectBoxHero_${Player_box_index}`} Player_box_index={Player_box_index} PlayerID={PlayerID} />} */}
-                    <Panel className="select_box div_2" style={{ visibility: State == 3 ? 'collapse' : 'visible' }}>
-                        <Label className="sub_label" style={{ color: '#C0C0C0' }} text={'普通技能'}></Label>
-                        {new Array(8).fill(0).map((item, index) => {
-                            let ban_class_name = '';
-                            let ability_class_name = '';
-                            if (State == 1) {
-                                // Ban人状态下只显示自己ban的技能
-                                if (my_ban_abi_number == index + 1) {
-                                    ban_class_name = 'banned';
-                                }
-                            } else if (State == 2) {
-                                // Pick人状态下显示enemy ban的技能
-                                if (enemy_ban_abi_number == index + 1) {
-                                    ban_class_name = 'banned';
-                                }
-                                // 显示自己pick的技能
-                                if (my_pick_abi_number == index + 1) {
-                                    ability_class_name = 'select_ability';
-                                }
-                            }
-                            return (
-                                abi_list[index + 1] && (
-                                    <DOTAAbilityImage
-                                        key={index + 1}
-                                        id={`${key_abi}_${Player_box_index}_${index + 1}`}
-                                        className={`ability ${ban_class_name} ${ability_class_name}`}
-                                        showtooltip={true}
-                                        abilityname={abi_list[index + 1]}
-                                        onactivate={panel => clickList(Player_box_index, key_abi, index + 1, PlayerID, panel, State)}
-                                    ></DOTAAbilityImage>
-                                )
-                            );
-                        })}
-                    </Panel>
-                    <Panel className="select_box div_3" style={{ visibility: State == 3 ? 'collapse' : 'visible' }}>
-                        <Label className="sub_label" style={{ color: '#C0C0C0' }} text={'终极技能'}></Label>
-                        {new Array(8).fill(0).map((item, index) => {
-                            let ban_class_name = '';
-                            let ability_class_name = '';
-                            if (State == 1) {
-                                // Ban人状态下只显示自己ban的技能
-                                if (my_ban_ult_number == index + 1) {
-                                    ban_class_name = 'banned';
-                                }
-                            } else if (State == 2) {
-                                // Pick人状态下显示enemy ban的技能
-                                if (enemy_ban_ult_number == index + 1) {
-                                    ban_class_name = 'banned';
-                                }
-                                // 显示自己pick的技能
-                                if (my_pick_ult_number == index + 1) {
-                                    ability_class_name = 'select_ability';
-                                }
-                            }
-                            return (
-                                ult_list[index + 1] && (
-                                    <DOTAAbilityImage
-                                        key={index + 1}
-                                        id={`${key_ult}_${Player_box_index}_${index + 1}`}
-                                        className={`ability ${ban_class_name} ${ability_class_name}`}
-                                        showtooltip={true}
-                                        abilityname={ult_list[index + 1]}
-                                        onactivate={panel => clickList(Player_box_index, key_ult, index + 1, PlayerID, panel, State)}
-                                    ></DOTAAbilityImage>
-                                )
-                            );
-                        })}
-                    </Panel>
-                    <Panel className="enemy_player_data" style={{ marginTop: State == 3 ? '5%' : '5px' }}>
-                        <Panel style={{ width: '100%', height: '50px', flowChildren: 'right' }}>
-                            <DOTAAvatarImage
-                                style={{ width: '30px', height: '100%', marginLeft: '25%' }}
-                                steamid={EnemyPlayerSteamID}
-                            ></DOTAAvatarImage>
-                            {/* <Label className="Player_box_element" style={{ color: '#C0C0C0' }} text={EnemyID_string} /> */}
-                            {/* <Label className="Player_box_element" style={{ color: '#C0C0C0' }} text={EnemyID} /> */}
-
-                            <DOTAUserName
-                                className="Player_box_element"
-                                style={{ color: '#C0C0C0', marginLeft: '10px', horizontalAlign: 'left' }}
-                                steamid={EnemyPlayerSteamID}
-                            />
-                        </Panel>
-                    </Panel>
-                    <Panel className="show_box" style={{ visibility: State == 3 ? 'visible' : 'collapse' }}>
-                        <Panel
-                            className="hero_img_box"
-                            id={`${enemy_team_tag}_hero_${Player_box_index}`}
-                            onactivate={panel => panelFlash(panel, Player_box_index, team)}
-                        >
-                            <DOTAHeroMovie className="hero_image_portrait" heroname={enemy_hero_name} />
-                        </Panel>
-                        <Panel className="ability_info">
-                            <Panel className="hero_name">
-                                {enemy_hero_name && (
-                                    <Label
-                                        className="sub_label"
-                                        text={$.Localize(`#${enemy_hero_name}`)}
-                                        style={{ color: '#C0C0C0', fontSize: '15px' }}
-                                    ></Label>
-                                )}
-                            </Panel>
-                            <Panel className="show_ability_box">
-                                <Panel className="ability">
-                                    {enemy_abi_name && (
-                                        <DOTAAbilityImage
-                                            className="ability"
-                                            id={`${enemy_team_tag}_abi_${Player_box_index}`}
-                                            showtooltip={true}
-                                            abilityname={enemy_abi_name}
-                                            style={{ width: '100%', height: '100%' }}
-                                            onactivate={panel => panelFlash(panel, Player_box_index, team)}
-                                        />
-                                    )}
-                                </Panel>
-                                <Panel className="ability">
-                                    {enemy_ult_name && (
-                                        <DOTAAbilityImage
-                                            className="ability"
-                                            id={`${enemy_team_tag}_ult_${Player_box_index}`}
-                                            showtooltip={true}
-                                            abilityname={enemy_ult_name}
-                                            style={{ width: '100%', height: '100%' }}
-                                            onactivate={panel => panelFlash(panel, Player_box_index, team)}
-                                        />
-                                    )}
-                                </Panel>
-                            </Panel>
-                        </Panel>
-                    </Panel>
+                    {<PlayerData key={`MyPlayerData_${Player_box_index}`} Player_box_index={Player_box_index} prosPlayerSteamID={PlayerSteamID} />}
+                    {<MyShowBox key={`MyShowBox_${Player_box_index}`} Player_box_index={Player_box_index} prosMyHeroName={my_hero_name} prosMyAbiName={my_abi_name} prosMyUltName={my_ult_name} />}
+                    {<SelectBoxHero key={`SelectBoxHero_${Player_box_index}`} Player_box_index={Player_box_index} PlayerID={PlayerID} propsMyBanHeroNumber = {my_ban_hero_number} propsMyPickHeroNumber = {my_pick_hero_number} propsEnemyBanHeroNumber = {enemy_ban_hero_number} />}
+                    {<SelectBoxAbi key={`MySelectBoxAbi_${Player_box_index}` } Player_box_index={Player_box_index} PlayerID={PlayerID}  propsMyBanNumber = {my_ban_abi_number} propsMyPicNumber = {my_pick_abi_number} propsEnemyBanNumber = {enemy_ban_abi_number} key_type = {key_abi} />}
+                    {<SelectBoxAbi key={`EnemySelectBoxAbi_${Player_box_index}` } Player_box_index={Player_box_index} PlayerID={PlayerID}  propsMyBanNumber = {my_ban_ult_number} propsMyPicNumber = {my_pick_ult_number} propsEnemyBanNumber = {enemy_ban_ult_number} key_type = {key_ult} />}
+                    {<PlayerData key={`EnemyPlayerData_${Player_box_index}`} Player_box_index={Player_box_index} prosPlayerSteamID={EnemyPlayerSteamID}/>}
+                    {<EnemyShowBox key={`EnemyShowBox_${Player_box_index}`} Player_box_index={Player_box_index} prosEnemyHeroName={enemy_hero_name} prosEnemyAbiName={enemy_abi_name} prosEnemyUltName={enemy_ult_name} />}
                     <Panel className="swap_button" style={{ visibility: PlayerID == LocalPlayerID || State == 3 ? 'collapse' : 'visible' }}>
                         <TextButton
                             text={'交换位置'}
@@ -563,7 +356,7 @@ export const OMGBP = () => {
                         return (
                             //@ts-ignore
                             <Panel
-                                key={index + 1}
+                                key={`AgreeSwapButton_${Player_box_index}_${index + 1}`}
                                 className=""
                                 style={{ width: '100%', height: '30px', flowChildren: 'left', visibility: visibility }}
                             >
@@ -586,24 +379,14 @@ export const OMGBP = () => {
             </>
         );
     }
-    function MyPlayerData({ Player_box_index }: { Player_box_index: number }) {
+    function PlayerData({ Player_box_index,prosPlayerSteamID }: { Player_box_index: number,prosPlayerSteamID:string }) {
         const [PlayerSteamID, setPlayerSteamID] = useState('');
-        const team = Game.GetLocalPlayerInfo().player_team_id;
-        const team_tag = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
-        const BpListResultAll = useNetTableValues('react_table')?.bp_list_result as BpListResultAll;
-        const PlayerID = BpListResultAll[team_tag][Player_box_index].PlayerID;
-        useEffect(() => {
-            if (Game.GetPlayerInfo(PlayerID) != undefined) {
-                const newId = Game.GetPlayerInfo(PlayerID).player_steamid;
-                if (PlayerSteamID != newId) {
-                    console.log(`MyPlayerData_${Player_box_index}组件渲染,PlayerSteamID:${newId}`);
-                    setPlayerSteamID(newId);
-                }
-            } else {
-                setPlayerSteamID('');
-            }
-        }, [BpListResultAll]);
-        const memoizedValue = useMemo(() => {
+        console.log(`prosPlayerSteamID是${prosPlayerSteamID}`);
+        
+        if(PlayerSteamID!=prosPlayerSteamID){
+            setPlayerSteamID(prosPlayerSteamID);
+        }
+        return useMemo(() => {
             return (
                 BpListResultAll && (
                     <Panel className="my_player_data" style={{ marginTop: State == 3 ? '20%' : '2px' }}>
@@ -619,49 +402,33 @@ export const OMGBP = () => {
                 )
             );
         }, [PlayerSteamID]);
-
-        return memoizedValue;
     }
 
-    function MyShowBox({ Player_box_index }: { Player_box_index: number }) {
-        // console.log("这是ShowBox组件渲染");
-        const [myHeroName, setmyHeroName] = useState('');
-        const [myAbiName, setmyAbiName] = useState('');
-        const [myUltName, setmyUltName] = useState('');
+    function MyShowBox({ Player_box_index,prosMyHeroName,prosMyAbiName,prosMyUltName }: { Player_box_index: number,prosMyHeroName:string,prosMyAbiName:string,prosMyUltName:string }) {
+        const [myHeroName, setmyHeroName] = useState(prosMyHeroName);
+        const [myAbiName, setmyAbiName] = useState(prosMyAbiName);
+        const [myUltName, setmyUltName] = useState(prosMyUltName);
+        console.log(`${Player_box_index}盒子的MyShowBox的myAbiName是:${myAbiName}`);
+        
+        // const [text , settext] = useState('');
         const team = Game.GetLocalPlayerInfo().player_team_id;
         const team_tag = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
-        const BpListResultAll = useNetTableValues('react_table')?.bp_list_result as BpListResultAll;
         // @ts-ignore
-        const State = useNetTableValues('react_table')?.react_table_state[1] as number;        
-        const bpListAll = useNetTableValues('react_table')?.bp_list_all as bp_list[];
-        useEffect(() => {
-            
-            if (!BpListResultAll) {return}
-            
-            let bpTag: keyof BpListResultItem = 'BanList';
-            if (State == 1) {
-                bpTag = 'BanList';
-            } else if (State == 2) {
-                bpTag = 'PickList';
-            } else if (State == 3) {
-                bpTag = 'PickList';
-            }
-            const heroNumber = BpListResultAll[team_tag][Player_box_index][bpTag].hero
-            const abiNumber = BpListResultAll[team_tag][Player_box_index][bpTag].abi
-            const ultNumber = BpListResultAll[team_tag][Player_box_index][bpTag].ult
-            
-            
-            if (bpListAll[Player_box_index]['hero_list'][heroNumber] != myHeroName) {
-                setmyHeroName(bpListAll[Player_box_index]['hero_list'][heroNumber]);
-            }
-            if (bpListAll[Player_box_index]['abi_list'][abiNumber] != myAbiName) {
-                setmyAbiName(bpListAll[Player_box_index]['abi_list'][abiNumber]);
-            }
-            if (bpListAll[Player_box_index]['ult_list'][ultNumber] != myUltName) {
-                setmyUltName(bpListAll[Player_box_index]['ult_list'][ultNumber]);
-            }
-        }, [BpListResultAll]);
+        const State = useNetTableValues('react_table')?.react_table_state[1] as number;
+        const text = prosMyHeroName == undefined ? '' : $.Localize(`#${myHeroName}`);
+        if (myHeroName != prosMyHeroName) {
+            setmyHeroName(prosMyHeroName);
+            // settext(text);
+        }
+        if (myAbiName != prosMyAbiName) {
+            setmyAbiName(prosMyAbiName);
+        }
+        if (myUltName != prosMyUltName) {
+            setmyUltName(prosMyUltName);
+        }
         return useMemo(() => {
+            // console.log(`${Player_box_index}盒子的MyShowBox渲染,myHeroName:${myHeroName},prosMyHeroName是${prosMyHeroName}`);
+            
             return (
                 <Panel className="show_box">
                     <Panel
@@ -675,13 +442,13 @@ export const OMGBP = () => {
                         <Panel className="hero_name">
                             <Label
                                 className="sub_label"
-                                text={$.Localize(`#${myHeroName}`)}
+                                text={text}
                                 style={{ color: '#C0C0C0', fontSize: '15px' }}
                             ></Label>
                         </Panel>
                         <Panel className="show_ability_box">
                             <Panel className="ability">
-                                <DOTAAbilityImage
+                                {myAbiName && <DOTAAbilityImage
                                     className="ability"
                                     id={`${team_tag}_abi_${Player_box_index}`}
                                     showtooltip={true}
@@ -690,10 +457,10 @@ export const OMGBP = () => {
                                     onactivate={panel => {
                                         panelFlash(panel, Player_box_index, team);
                                     }}
-                                />
+                                />}
                             </Panel>
                             <Panel className="ability">
-                                <DOTAAbilityImage
+                                {myUltName && <DOTAAbilityImage
                                     className="ability"
                                     id={`${team_tag}_ult_${Player_box_index}`}
                                     showtooltip={true}
@@ -702,56 +469,38 @@ export const OMGBP = () => {
                                     onactivate={panel => {
                                         panelFlash(panel, Player_box_index, team);
                                     }}
-                                />
+                                />}
                             </Panel>
                         </Panel>
                     </Panel>
                 </Panel>
             );
-        }, [myHeroName, myAbiName, myUltName]);
+        }, [myHeroName, myAbiName, myUltName,State]);
     }
-    function HeroIcon({ Player_box_index }: { Player_box_index: number }) {
-        return useMemo(() => {
-            return (
-                <Image
-                    // id={`${key_hero}_${Player_box_index}_${index + 1}`}
-                    // className={`hero_image ${ban_class_name} ${ability_class_name}`}
-                    // src={`s2r://panorama/images/heroes/thd2_${hero_list[index + 1]}_png.vtex`}
-                    // onactivate={panel => clickList(Player_box_index, key_hero, index + 1, PlayerID, panel,State)}
-                ></Image>
-            )
-        },[])
-    }
-    function SelectBoxHero ({ Player_box_index,PlayerID }: { Player_box_index: number ,PlayerID:PlayerID}) {
-        const [myBanHeroNumber, setmyBanHeroNumber] = useState(0);
-        const [myPickHeroNumber, setmyPickHeroNumber] = useState(0);
-        const [enemyBanHeroNumber, setenemyBanHeroNumber] = useState(0);
+    function SelectBoxHero ({ Player_box_index,PlayerID,propsMyBanHeroNumber,propsMyPickHeroNumber,propsEnemyBanHeroNumber }: { Player_box_index: number ,PlayerID:PlayerID,propsMyBanHeroNumber:number,propsMyPickHeroNumber:number,propsEnemyBanHeroNumber:number}) {
+        // console.log(`${Player_box_index}盒子的propsMyBanHeroNumber是${propsMyBanHeroNumber}`);
+        const [myBanHeroNumber, setmyBanHeroNumber] = useState(propsMyBanHeroNumber);
+        const [myPickHeroNumber, setmyPickHeroNumber] = useState(propsMyPickHeroNumber);
+        const [enemyBanHeroNumber, setenemyBanHeroNumber] = useState(propsEnemyBanHeroNumber);
         //@ts-ignore
         const State = useNetTableValues('react_table')?.react_table_state[1] as number;   
         const bpListAll = useNetTableValues('react_table')?.bp_list_all as bp_list[];
         const BpListResultAll = useNetTableValues('react_table')?.bp_list_result as BpListResultAll;
-        const team = Game.GetLocalPlayerInfo().player_team_id;
-        const team_tag = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
-        const enemy_team_tag = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'moriya' : 'hakurei';
         const hero_list = bpListAll[Player_box_index].hero_list
         const key_hero: keyof BPList = 'hero';
-        useEffect(() => {
-            const bpTag: keyof BpListResultItem = 'BanList';
-            const localMyBanHeroNumber = BpListResultAll[team_tag][Player_box_index].BanList.hero;
-            const localEnemyBanHeroNumber = BpListResultAll[enemy_team_tag][Player_box_index].BanList.hero;
-            const localMyPickHeroNumber = BpListResultAll[team_tag][Player_box_index].PickList.hero;
-            if (localMyBanHeroNumber != myBanHeroNumber) {
-                setmyBanHeroNumber(localMyBanHeroNumber);
-            }
-            if (localMyPickHeroNumber != myPickHeroNumber) {
-                setmyPickHeroNumber(localMyPickHeroNumber);
-            }
-            if (localEnemyBanHeroNumber != enemyBanHeroNumber) {
-                setenemyBanHeroNumber(localEnemyBanHeroNumber);
-            }
-        },[BpListResultAll])
+        if (propsMyBanHeroNumber != myBanHeroNumber) {
+            setmyBanHeroNumber(propsMyBanHeroNumber);
+        }
+        if (propsMyPickHeroNumber != myPickHeroNumber) {
+            setmyPickHeroNumber(propsMyPickHeroNumber);
+        }
+        if (propsEnemyBanHeroNumber != enemyBanHeroNumber) {
+            setenemyBanHeroNumber(propsEnemyBanHeroNumber);
+        }
         return useMemo(() => {
+            // console.log(`${Player_box_index}号盒子的SelectBoxHero渲染`);
             return (
+                
                 <Panel className="select_box div_1" style={{ visibility: State == 3 ? 'collapse' : 'visible' }}>
                         <Label className="sub_label" style={{ color: '#C0C0C0' }} text={'少女'}></Label>
                         {new Array(6).fill(0).map((item, index) => {
@@ -774,19 +523,141 @@ export const OMGBP = () => {
                             }
                             return (
                                 hero_list[index + 1] && (
-                                    <Image
-                                        key={index + 1}
-                                        id={`${key_hero}_${Player_box_index}_${index + 1}`}
-                                        className={`hero_image ${ban_class_name} ${ability_class_name}`}
-                                        src={`s2r://panorama/images/heroes/thd2_${hero_list[index + 1]}_png.vtex`}
-                                        onactivate={panel => clickList(Player_box_index, key_hero, index + 1, PlayerID, panel, State)}
-                                    ></Image>
+                                    <DOTAHeroImage key={`${key_hero}_${Player_box_index}_${index + 1}`} id={`${key_hero}_${Player_box_index}_${index + 1}`} className={`hero_image ${ban_class_name} ${ability_class_name}`} heroname={hero_list[index + 1]} onactivate={panel => clickList(Player_box_index, key_hero, index + 1, panel)}/>
                                 )
                             );
                         })}
                     </Panel>
             )
-        },[])
+        },[myBanHeroNumber,myPickHeroNumber,enemyBanHeroNumber,State])
+    }
+    function SelectBoxAbi ({ Player_box_index,PlayerID,propsMyBanNumber,propsMyPicNumber,propsEnemyBanNumber, key_type}: { Player_box_index: number , PlayerID:PlayerID, propsMyBanNumber:number,propsMyPicNumber:number,propsEnemyBanNumber:number,key_type: keyof BPList }) {
+        const [myBanNumber, setmyBanNumber] = useState(propsMyBanNumber);
+        const [myPickNumber, setmyPickNumber] = useState(propsMyPicNumber);
+        const [enemyBanNumber, setenemyAbiNumber] = useState(propsEnemyBanNumber);
+        //@ts-ignore
+        const State = useNetTableValues('react_table')?.react_table_state[1] as number;   
+        const bpListAll = useNetTableValues('react_table')?.bp_list_all as bp_list[];
+        let abi_list = bpListAll[Player_box_index].abi_list
+        if (key_type == 'ult') {
+            abi_list = bpListAll[Player_box_index].ult_list
+        }
+        if (propsMyBanNumber != myBanNumber) {
+            setmyBanNumber(propsMyBanNumber);
+        }
+        if (propsMyPicNumber != myPickNumber) {
+            setmyPickNumber(propsMyPicNumber);
+        }
+        if (propsEnemyBanNumber != enemyBanNumber) {
+            setenemyAbiNumber(propsEnemyBanNumber);
+        }
+        return useMemo(() => {
+            return (
+                <Panel className="select_box div_2" style={{ visibility: State == 3 ? 'collapse' : 'visible' }}>
+                    <Label className="sub_label" style={{ color: '#C0C0C0' }} text={'普通技能'}></Label>
+                    {new Array(8).fill(0).map((item, index) => {
+                        let ban_class_name = '';
+                        let ability_class_name = '';
+                        if (State == 1) {
+                            // Ban人状态下只显示自己ban的技能
+                            if (myBanNumber == index + 1) {
+                                ban_class_name = 'banned';
+                            }
+                        } else if (State == 2) {
+                            // Pick人状态下显示enemy ban的技能
+                            if (enemyBanNumber == index + 1) {
+                                ban_class_name = 'banned';
+                            }
+                            // 显示自己pick的技能
+                            if (myPickNumber == index + 1) {
+                                ability_class_name = 'select_ability';
+                            }
+                        }
+                        return (
+                            abi_list[index + 1] && (
+                                <DOTAAbilityImage
+                                    id={`${key_type}_${Player_box_index}_${index + 1}`}
+                                    key={`${key_type}_${Player_box_index}_${index + 1}`}
+                                    className={`ability ${ban_class_name} ${ability_class_name}`}
+                                    showtooltip={true}
+                                    abilityname={abi_list[index + 1]}
+                                    onactivate={panel => clickList(Player_box_index, key_type, index + 1, panel)}
+                                />
+                            )
+                        );
+                    })}
+                </Panel>
+            );
+        },[myBanNumber,myPickNumber,enemyBanNumber,State])
+    }
+    function EnemyShowBox ({ Player_box_index,prosEnemyHeroName,prosEnemyAbiName,prosEnemyUltName }: { Player_box_index: number,prosEnemyHeroName:string,prosEnemyAbiName:string,prosEnemyUltName:string }){
+        // console.log("这是ShowBox组件渲染");
+        const [enemyHeroName, setenemyHeroName] = useState(prosEnemyHeroName);
+        const [enemyAbiName, setenemyAbiName] = useState(prosEnemyAbiName);
+        const [enemyUltName, setenemyUltName] = useState(prosEnemyUltName);
+        const team = Game.GetLocalPlayerInfo().player_team_id;
+        const enemy_team_tag = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'moriya' : 'hakurei';
+        // @ts-ignore
+        const State = useNetTableValues('react_table')?.react_table_state[1] as number;        
+        if (enemyHeroName != prosEnemyHeroName) {
+            setenemyHeroName(prosEnemyHeroName);
+        }
+        if (enemyAbiName != prosEnemyAbiName) {
+            setenemyAbiName(prosEnemyAbiName);
+        }
+        if (enemyUltName != prosEnemyUltName) {
+            setenemyUltName(prosEnemyUltName);
+        }
+        return useMemo(() => {
+            return (
+                <Panel className="show_box" style={{ visibility: State == 3 ? 'visible' : 'collapse' }}>
+                        <Panel
+                            className="hero_img_box"
+                            id={`${enemy_team_tag}_hero_${Player_box_index}`}
+                            onactivate={panel => panelFlash(panel, Player_box_index, team)}
+                        >
+                            <DOTAHeroMovie className="hero_image_portrait" heroname={enemyHeroName} />
+                        </Panel>
+                        <Panel className="ability_info">
+                            <Panel className="hero_name">
+                                {enemyHeroName && (
+                                    <Label
+                                        className="sub_label"
+                                        text={$.Localize(`#${enemyHeroName}`)}
+                                        style={{ color: '#C0C0C0', fontSize: '15px' }}
+                                    ></Label>
+                                )}
+                            </Panel>
+                            <Panel className="show_ability_box">
+                                <Panel className="ability">
+                                    {enemyAbiName && (
+                                        <DOTAAbilityImage
+                                            className="ability"
+                                            id={`${enemy_team_tag}_abi_${Player_box_index}`}
+                                            showtooltip={true}
+                                            abilityname={enemyAbiName}
+                                            style={{ width: '100%', height: '100%' }}
+                                            onactivate={panel => panelFlash(panel, Player_box_index, team)}
+                                        />
+                                    )}
+                                </Panel>
+                                <Panel className="ability">
+                                    {enemyUltName && (
+                                        <DOTAAbilityImage
+                                            className="ability"
+                                            id={`${enemy_team_tag}_ult_${Player_box_index}`}
+                                            showtooltip={true}
+                                            abilityname={enemyUltName}
+                                            style={{ width: '100%', height: '100%' }}
+                                            onactivate={panel => panelFlash(panel, Player_box_index, team)}
+                                        />
+                                    )}
+                                </Panel>
+                            </Panel>
+                        </Panel>
+                    </Panel>
+            )
+        },[enemyHeroName,enemyAbiName,enemyUltName,State])
     }
 
     function getMargin(Player_box_index: number): { margin_left: string; margin_right: string } {
