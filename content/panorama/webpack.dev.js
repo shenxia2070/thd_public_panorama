@@ -102,7 +102,9 @@ module.exports = {
                 // if filename is not set, it will use the name of the entry
                 { import: './hud/layout.xml', type: 'Hud' },
 
+
                 { import: './omg_bp/layout.xml'},
+                { import: './omg_bp/thd_end_screen.xml'},
             ],
         }),
         // use ignore plugin to ignore less files changes

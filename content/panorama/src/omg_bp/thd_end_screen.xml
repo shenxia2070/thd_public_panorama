@@ -1,0 +1,12 @@
+<root>
+    <styles>
+        <include src="./styles.less" />
+ 		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
+    </styles>
+    <scripts>
+        <include src="./thd_end_screen.tsx" />
+    </scripts>
+    <Panel class="root" hittest="false" >
+		<Label class="LegendPanel ScoreCol_Deaths" text="测试!!!!" />
+	</Panel>
+</root>

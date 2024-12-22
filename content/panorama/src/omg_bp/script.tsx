@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { render, useGameEvent, useNetTableValues } from 'react-panorama-x';
 export const OMGBP = () => {
-    if (Game.GetMapInfo().map_name == `maps/dota.vpk`) {return null;}
     const [State, setState] = useState(1); //1表示ban人时间，2表示选人时间,3表示展示时间
     const [BpListAll, setBpListALl] = useState<bp_list[] | undefined>(undefined);
     const [BpListResultAll, setBpListResultAll] = useState<BpListResultAll>({
         hakurei: {} as BpListResult,
         moriya: {} as BpListResult,
     });
-    
     const LocalPlayerInfo = Game.GetLocalPlayerInfo();
     const debounce = (func: (...args: any[]) => void, wait: number) => {
         let timeout: any;
@@ -155,8 +153,11 @@ export const OMGBP = () => {
         }
     };
 
-    const sendSwapButton = (Player_box_index: number, LocalPlayerBoxIndex: number, team_tag: keyof BpListResultAll) => {
-        // console.log(`${LocalPlayerBoxIndex}号盒子,ID为点击了${Player_box_index}号盒子的交换按钮`);
+    const sendSwapButton = (Player_box_index: number, LocalPlayerBoxIndex: number) => {
+        const BpListResultAll = CustomNetTables.GetTableValue('react_table', 'bp_list_result') as BpListResultAll;
+        const team = Game.GetLocalPlayerInfo().player_team_id;
+        const team_tag: keyof BpListResultAll = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
+        console.log(`${team_tag}的${LocalPlayerBoxIndex}号盒子,ID为点击了${Player_box_index}号盒子的交换按钮`);
         let ChangeReceive = BpListResultAll[team_tag][Player_box_index].ChangeReceiveList;
         // console.log(ChangeReceive.length);
         let length = ChangeReceive.length;
@@ -171,7 +172,6 @@ export const OMGBP = () => {
         }
         console.log(NewChangeReceive);
 
-        const team = Game.GetLocalPlayerInfo().player_team_id;
         GameEvents.SendCustomGameEventToServer('ChangeReceive', {
             data: { Player_box_index: Player_box_index, NewChangeReceive: NewChangeReceive, team: team },
         });
@@ -313,7 +313,7 @@ export const OMGBP = () => {
             enemy_ult_name = ult_list[enemy_pick_ult_number];
         }
 
-        const ChangeReceiveList = Object.values(BpListResultAll.hakurei[Player_box_index].ChangeReceiveList);
+        const ChangeReceiveList = Object.values(BpListResultAll[team_tag][Player_box_index].ChangeReceiveList);
 
         const { margin_left, margin_right } = getMargin(Player_box_index);
         return (
@@ -330,58 +330,78 @@ export const OMGBP = () => {
                         <TextButton
                             text={'交换位置'}
                             style={{ color: '#C0C0C0' }}
-                            onactivate={() => sendSwapButton(Player_box_index, LocalPlayerBoxIndex, team_tag)}
+                            onactivate={() => sendSwapButton(Player_box_index, LocalPlayerBoxIndex)}
                         ></TextButton>
                     </Panel>
                     {new Array(5).fill(0).map((item, index) => {
-                        let visibility: Partial<'visible' | 'collapse'> = 'collapse';
-                        for (let i = 0; i < ChangeReceiveList.length; i++) {
-                            if (ChangeReceiveList[i] == index + 1) {
-                                // console.log(`${Player_box_index}号盒子收到了${index + 1}盒子的交换`);
-                                visibility = 'visible';
-                            }
-                        }
-                        if (Player_box_index != LocalPlayerBoxIndex) {
-                            visibility = 'collapse';
-                        }
-                        if (State == 3) {
-                            visibility = 'collapse';
-                        }
-                        let info_name = '未知玩家';
-                        const info = Game.GetPlayerInfo(BpListResultAll[team_tag][index + 1].PlayerID);
-                        if (info) {
-                            info_name = info.player_name;
-                        }
-
                         return (
-                            //@ts-ignore
-                            <Panel
-                                key={`AgreeSwapButton_${Player_box_index}_${index + 1}`}
-                                className=""
-                                style={{ width: '100%', height: '30px', flowChildren: 'left', visibility: visibility }}
-                            >
-                                <Panel className="swap_button" style={{ marginRight: '5%' }}>
-                                    <TextButton
-                                        text={'同意交换'}
-                                        style={{ color: '#C0C0C0' }}
-                                        onactivate={() => agreeSwapButton(Player_box_index, index + 1)}
-                                    ></TextButton>
-                                </Panel>
-                                <Label
-                                    className="Player_box_element"
-                                    style={{ color: '#C0C0C0', marginRight: '20%' }}
-                                    text={`${info_name}发起交换`}
-                                />
-                            </Panel>
-                        );
+                            <AgreeSwapPanel key={`AgreeSwapPanel_${Player_box_index}_${index + 1}`} Player_box_index={Player_box_index} index={index + 1} LocalPlayerBoxIndex={LocalPlayerBoxIndex}/>
+                        )
                     })}
                 </Panel>
             </>
         );
     }
+    function AgreeSwapPanel({Player_box_index,index,LocalPlayerBoxIndex}:{Player_box_index:number,index:number,LocalPlayerBoxIndex:number}) {
+        const [LocalChangeReceiveList, setLocalChangeReceiveList] = useState<number[]>([]);
+        const BpListResultAll = CustomNetTables.GetTableValue('react_table', 'bp_list_result') as BpListResultAll;
+        //@ts-ignore
+        const State = useNetTableValues('react_table')?.react_table_state[1] as number;   
+        const team = Game.GetLocalPlayerInfo().player_team_id;
+        const team_tag: keyof BpListResultAll = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
+        const ChangeReceiveList = Object.values(BpListResultAll[team_tag][Player_box_index].ChangeReceiveList);
+        let visibility: Partial<'visible' | 'collapse'> = 'collapse';
+        let buttonVisibility: Partial<'visible' | 'collapse'> = 'collapse';
+        if (JSON.stringify(LocalChangeReceiveList) !== JSON.stringify(ChangeReceiveList)) {
+          setLocalChangeReceiveList(ChangeReceiveList);
+        }
+        for (let i = 0; i < LocalChangeReceiveList.length; i++) {
+            if (LocalChangeReceiveList[i] == index) {
+                // console.log(`${Player_box_index}号盒子收到了${index}盒子的交换`);
+                visibility = 'visible';
+                buttonVisibility = 'visible';
+            }
+        }
+        if (Player_box_index != LocalPlayerBoxIndex) {
+            // visibility = 'collapse';
+            buttonVisibility = 'collapse';
+        }
+        if (State == 3) {
+            visibility = 'collapse';
+            buttonVisibility = 'collapse';
+        }
+        let info_name = '未知玩家';
+        const info = Game.GetPlayerInfo(BpListResultAll[team_tag][index].PlayerID);
+        if (info) {
+            info_name = info.player_name;
+        }
+        return useMemo(() => {
+            return (
+                <Panel
+                key={`AgreeSwapButton_${Player_box_index}_${index}`}
+                className=""
+                style={{ width: '100%', height: '30px', flowChildren: 'left', visibility: visibility }}
+            >
+                <Panel style={{ marginRight: '5%', width: '70px', height: '30px', flowChildren: 'right' }}>
+                    <TextButton
+                        className='swap_button'
+                        text={'同意交换'}
+                        style={{ color: '#C0C0C0' ,visibility: buttonVisibility}}
+                        onactivate={() => agreeSwapButton(Player_box_index, index)}
+                    ></TextButton>
+                </Panel>
+                <Label
+                    className="Player_box_element"
+                    style={{ color: '#C0C0C0', marginRight: '20%' }}
+                    text={`${info_name}发起交换`}
+                />
+            </Panel>
+            );
+        }, [LocalChangeReceiveList]);
+    }
     function PlayerData({ Player_box_index,prosPlayerSteamID }: { Player_box_index: number,prosPlayerSteamID:string }) {
         const [PlayerSteamID, setPlayerSteamID] = useState('');
-        console.log(`prosPlayerSteamID是${prosPlayerSteamID}`);
+        // console.log(`prosPlayerSteamID是${prosPlayerSteamID}`);
         
         if(PlayerSteamID!=prosPlayerSteamID){
             setPlayerSteamID(prosPlayerSteamID);
@@ -408,7 +428,7 @@ export const OMGBP = () => {
         const [myHeroName, setmyHeroName] = useState(prosMyHeroName);
         const [myAbiName, setmyAbiName] = useState(prosMyAbiName);
         const [myUltName, setmyUltName] = useState(prosMyUltName);
-        console.log(`${Player_box_index}盒子的MyShowBox的myAbiName是:${myAbiName}`);
+        // console.log(`${Player_box_index}盒子的MyShowBox的myAbiName是:${myAbiName}`);
         
         // const [text , settext] = useState('');
         const team = Game.GetLocalPlayerInfo().player_team_id;
@@ -523,7 +543,13 @@ export const OMGBP = () => {
                             }
                             return (
                                 hero_list[index + 1] && (
-                                    <DOTAHeroImage key={`${key_hero}_${Player_box_index}_${index + 1}`} id={`${key_hero}_${Player_box_index}_${index + 1}`} className={`hero_image ${ban_class_name} ${ability_class_name}`} heroname={hero_list[index + 1]} onactivate={panel => clickList(Player_box_index, key_hero, index + 1, panel)}/>
+                                    <Image
+                                        key={`${key_hero}_${Player_box_index}_${index + 1}`}
+                                        id={`${key_hero}_${Player_box_index}_${index + 1}`}
+                                        className={`hero_image ${ban_class_name} ${ability_class_name}`}
+                                        src={`s2r://panorama/images/heroes/thd2_${hero_list[index + 1]}_png.vtex`}
+                                        onactivate={panel => clickList(Player_box_index, key_hero, index + 1, panel)}
+                                    ></Image>
                                 )
                             );
                         })}
@@ -697,16 +723,13 @@ export const OMGBP = () => {
         dotaHud.FindChildTraverse('FriendsAndFoes').visible = false;
         // @ts-ignore
         dotaHud.FindChildTraverse('PreMinimapContainer').visible = false;
-        // @ts-ignore
-        dotaHud.FindChildTraverse('ContextMenuManager').visible = false; //隐藏右键菜单，禁止交换英雄
     }
     function invisStrategyPanel() {
         // $.Msg("invis_strategy_panel()");
         // @ts-ignore
         const dotaHud = $.GetContextPanel().GetParent().GetParent().GetParent().GetParent();
         // @ts-ignore
-        const StrategyScreen = (dotaHud.FindChildTraverse('StrategyScreen').visible = false);
-
+        dotaHud.FindChildTraverse('StrategyScreen').visible = false;
         // @ts-ignore
         dotaHud.FindChildTraverse('RadiantTeamPlayers').visible = false;
         // @ts-ignore
@@ -721,7 +744,8 @@ export const OMGBP = () => {
     }
 };
 
-render(<OMGBP />, $.GetContextPanel());
+
+if (Game.GetMapInfo().map_name == `maps/1_thdots_map.vpk`) render(<OMGBP />, $.GetContextPanel());
 
 interface bp_list {
     hero_list: Array<string>;
