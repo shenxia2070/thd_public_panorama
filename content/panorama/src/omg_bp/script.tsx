@@ -258,9 +258,9 @@ export const OMGBP = () => {
             EnemyPlayerSteamID = Game.GetPlayerInfo(EnemyID).player_steamid;
         }
         let LocalPlayerBoxIndex: number;
+        console.log(`${Player_box_index}号盒子的PlayerID是${BpListResultAll[team_tag][Player_box_index].PlayerID},EnemyID是${EnemyID}`);
+        // console.log(BpListResultAll[team_tag][Player_box_index].PlayerID);
         for (let i = 1; i < 6; i++) {
-            // console.log(`${i}号盒子`);
-            // console.log(BpListResultAll[team_tag][i]);
             if (BpListResultAll[team_tag][i] != undefined) {
                 if (BpListResultAll[team_tag][i].PlayerID == LocalPlayerID) {
                     LocalPlayerBoxIndex = i;
@@ -319,12 +319,12 @@ export const OMGBP = () => {
         return (
             <>
                 <Panel className="Player_box" style={{ marginLeft: margin_left, marginRight: margin_right }}>
-                    {<PlayerData key={`MyPlayerData_${Player_box_index}`} Player_box_index={Player_box_index} prosPlayerSteamID={PlayerSteamID} />}
+                    {<PlayerData key={`MyPlayerData_${Player_box_index}`} Player_box_index={Player_box_index} prosPlayerSteamID={PlayerSteamID} PlayerID={PlayerID} />}
                     {<MyShowBox key={`MyShowBox_${Player_box_index}`} Player_box_index={Player_box_index} prosMyHeroName={my_hero_name} prosMyAbiName={my_abi_name} prosMyUltName={my_ult_name} />}
                     {<SelectBoxHero key={`SelectBoxHero_${Player_box_index}`} Player_box_index={Player_box_index} PlayerID={PlayerID} propsMyBanHeroNumber = {my_ban_hero_number} propsMyPickHeroNumber = {my_pick_hero_number} propsEnemyBanHeroNumber = {enemy_ban_hero_number} />}
                     {<SelectBoxAbi key={`MySelectBoxAbi_${Player_box_index}` } Player_box_index={Player_box_index} PlayerID={PlayerID}  propsMyBanNumber = {my_ban_abi_number} propsMyPicNumber = {my_pick_abi_number} propsEnemyBanNumber = {enemy_ban_abi_number} key_type = {key_abi} />}
                     {<SelectBoxAbi key={`EnemySelectBoxAbi_${Player_box_index}` } Player_box_index={Player_box_index} PlayerID={PlayerID}  propsMyBanNumber = {my_ban_ult_number} propsMyPicNumber = {my_pick_ult_number} propsEnemyBanNumber = {enemy_ban_ult_number} key_type = {key_ult} />}
-                    {<PlayerData key={`EnemyPlayerData_${Player_box_index}`} Player_box_index={Player_box_index} prosPlayerSteamID={EnemyPlayerSteamID}/>}
+                    {<PlayerData key={`EnemyPlayerData_${Player_box_index}`} Player_box_index={Player_box_index} prosPlayerSteamID={EnemyPlayerSteamID} PlayerID={EnemyID} />}
                     {<EnemyShowBox key={`EnemyShowBox_${Player_box_index}`} Player_box_index={Player_box_index} prosEnemyHeroName={enemy_hero_name} prosEnemyAbiName={enemy_abi_name} prosEnemyUltName={enemy_ult_name} />}
                     <Panel className="swap_button" style={{ visibility: PlayerID == LocalPlayerID || State == 3 ? 'collapse' : 'visible' }}>
                         <TextButton
@@ -399,9 +399,13 @@ export const OMGBP = () => {
             );
         }, [LocalChangeReceiveList]);
     }
-    function PlayerData({ Player_box_index,prosPlayerSteamID }: { Player_box_index: number,prosPlayerSteamID:string }) {
+    function PlayerData({ Player_box_index,prosPlayerSteamID,PlayerID }: { Player_box_index: number,prosPlayerSteamID:string ,PlayerID:PlayerID }) {
         const [PlayerSteamID, setPlayerSteamID] = useState('');
         // console.log(`prosPlayerSteamID是${prosPlayerSteamID}`);
+        
+        const BpListResultAll = useNetTableValues('react_table')?.bp_list_result as BpListResultAll;
+        const string  = Game.GetPlayerInfo(PlayerID) ? Game.GetPlayerInfo(PlayerID).player_name : '未知玩家'
+        // console.log(`id是${id},string是${string}`);
         
         if(PlayerSteamID!=prosPlayerSteamID){
             setPlayerSteamID(prosPlayerSteamID);
@@ -417,6 +421,11 @@ export const OMGBP = () => {
                                 style={{ color: '#C0C0C0', marginLeft: '10px', horizontalAlign: 'left' }}
                                 steamid={PlayerSteamID}
                             />
+                            {/* <Label
+                                className="Player_box_element"
+                                style={{ color: '#C0C0C0', marginLeft: '10px', horizontalAlign: 'left' }}
+                                text={string}
+                            ></Label> */}
                         </Panel>
                     </Panel>
                 )
