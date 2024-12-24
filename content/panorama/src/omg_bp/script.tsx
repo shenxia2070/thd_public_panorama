@@ -99,10 +99,13 @@ export const OMGBP = () => {
 
     const debouncedHandler = debounce(
         () => {
+            console.log('执行debouncedHandler');
+            console.log(CustomNetTables.GetTableValue('react_table', 'bp_list_result'));
+            
             // @ts-ignore
-            // setBpListResultAll(CustomNetTables.GetTableValue('react_table', 'bp_list_result'));
+            setBpListResultAll(CustomNetTables.GetTableValue('react_table', 'bp_list_result'));
         },
-        50 // 0.05秒
+        3 // 0.05秒
     );
     const clickList = (Player_box_index: number, key_string: keyof BPList, index: number, panel: Panel) => {
         // 首先判断id, 是否是自己的盒子
@@ -157,23 +160,12 @@ export const OMGBP = () => {
         const BpListResultAll = CustomNetTables.GetTableValue('react_table', 'bp_list_result') as BpListResultAll;
         const team = Game.GetLocalPlayerInfo().player_team_id;
         const team_tag: keyof BpListResultAll = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
-        console.log(`${team_tag}的${LocalPlayerBoxIndex}号盒子,ID为点击了${Player_box_index}号盒子的交换按钮`);
+        console.log(`${team_tag}的${LocalPlayerBoxIndex}号盒子,ID为点击了${Player_box_index}号盒子的交换按钮1`);
         let ChangeReceive = BpListResultAll[team_tag][Player_box_index].ChangeReceiveList;
-        // console.log(ChangeReceive.length);
-        let length = ChangeReceive.length;
-        let NewChangeReceive: number[] = [];
-        if (length == undefined) {
-            length = 0;
-            NewChangeReceive = [LocalPlayerBoxIndex];
-        } else {
-            for (let i = 0; i < length; i++) {
-                NewChangeReceive.push(ChangeReceive[i + 1]);
-            }
-        }
-        console.log(NewChangeReceive);
+        console.log(ChangeReceive);
 
         GameEvents.SendCustomGameEventToServer('ChangeReceive', {
-            data: { Player_box_index: Player_box_index, NewChangeReceive: NewChangeReceive, team: team },
+            data: { Player_box_index: Player_box_index, team: team,LocalPlayerBoxIndex: LocalPlayerBoxIndex },
         });
     };
 
@@ -258,7 +250,7 @@ export const OMGBP = () => {
             EnemyPlayerSteamID = Game.GetPlayerInfo(EnemyID).player_steamid;
         }
         let LocalPlayerBoxIndex: number;
-        console.log(`${Player_box_index}号盒子的PlayerID是${BpListResultAll[team_tag][Player_box_index].PlayerID},EnemyID是${EnemyID}`);
+        // console.log(`${Player_box_index}号盒子的PlayerID是${BpListResultAll[team_tag][Player_box_index].PlayerID},EnemyID是${EnemyID}`);
         // console.log(BpListResultAll[team_tag][Player_box_index].PlayerID);
         for (let i = 1; i < 6; i++) {
             if (BpListResultAll[team_tag][i] != undefined) {
@@ -352,6 +344,10 @@ export const OMGBP = () => {
         const ChangeReceiveList = Object.values(BpListResultAll[team_tag][Player_box_index].ChangeReceiveList);
         let visibility: Partial<'visible' | 'collapse'> = 'collapse';
         let buttonVisibility: Partial<'visible' | 'collapse'> = 'collapse';
+        // console.log(`${Player_box_index}号盒子收到了${index}盒子的交换`);
+        // console.log(BpListResultAll[team_tag][Player_box_index].ChangeReceiveList);
+        
+        
         if (JSON.stringify(LocalChangeReceiveList) !== JSON.stringify(ChangeReceiveList)) {
           setLocalChangeReceiveList(ChangeReceiveList);
         }
