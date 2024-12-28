@@ -7,6 +7,5 @@
         <include src="./thd_end_screen.tsx" />
     </scripts>
     <Panel class="root" hittest="false" >
-		<Label class="LegendPanel ScoreCol_Deaths" text="测试!!!!" />
 	</Panel>
 </root>

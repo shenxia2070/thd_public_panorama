@@ -160,9 +160,9 @@ export const OMGBP = () => {
         const BpListResultAll = CustomNetTables.GetTableValue('react_table', 'bp_list_result') as BpListResultAll;
         const team = Game.GetLocalPlayerInfo().player_team_id;
         const team_tag: keyof BpListResultAll = team == DOTATeam_t.DOTA_TEAM_GOODGUYS ? 'hakurei' : 'moriya';
-        console.log(`${team_tag}的${LocalPlayerBoxIndex}号盒子,ID为点击了${Player_box_index}号盒子的交换按钮1`);
+        // console.log(`${team_tag}的${LocalPlayerBoxIndex}号盒子,ID为点击了${Player_box_index}号盒子的交换按钮`);
         let ChangeReceive = BpListResultAll[team_tag][Player_box_index].ChangeReceiveList;
-        console.log(ChangeReceive);
+        // console.log(ChangeReceive);
 
         GameEvents.SendCustomGameEventToServer('ChangeReceive', {
             data: { Player_box_index: Player_box_index, team: team,LocalPlayerBoxIndex: LocalPlayerBoxIndex },
@@ -583,6 +583,7 @@ export const OMGBP = () => {
             setenemyAbiNumber(propsEnemyBanNumber);
         }
         return useMemo(() => {
+            
             return (
                 <Panel className="select_box div_2" style={{ visibility: State == 3 ? 'collapse' : 'visible' }}>
                     <Label className="sub_label" style={{ color: '#C0C0C0' }} text={'普通技能'}></Label>
