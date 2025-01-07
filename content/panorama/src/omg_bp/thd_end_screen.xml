@@ -2,6 +2,7 @@
     <styles>
         <include src="./styles.less" />
  		<include src="s2r://panorama/styles/dotastyles.vcss_c" />
+        <include src="file://{resources}/styles/custom_game/dots_test.css" />
     </styles>
     <scripts>
         <include src="./thd_end_screen.tsx" />

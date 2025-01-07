@@ -15,4 +15,5 @@ declare interface CustomGameEventDeclarations {
     AgreeReceive:{data:any}
     ReactToLua:{data:any}
     ReactFlash:{data:any}
+    OnClickEndButton:{}
 }

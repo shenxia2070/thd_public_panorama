@@ -441,6 +441,8 @@ export const OMGBP = () => {
         // @ts-ignore
         const State = useNetTableValues('react_table')?.react_table_state[1] as number;
         const text = prosMyHeroName == undefined ? '' : $.Localize(`#${myHeroName}`);
+        CustomNetTables.SubscribeNetTableListener('react_table', () => {console.log(`检测到react_table发生变化`);
+        });
         if (myHeroName != prosMyHeroName) {
             setmyHeroName(prosMyHeroName);
             // settext(text);

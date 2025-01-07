@@ -16,4 +16,7 @@
     "[xml]": {
         "editor.defaultFormatter": "DotJoshJohnson.xml"
     },
+    "[less]": {
+        "editor.defaultFormatter": "vscode.css-language-features"
+    },
 }

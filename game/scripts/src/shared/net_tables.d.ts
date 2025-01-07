@@ -26,6 +26,9 @@ declare interface CustomNetTableDeclarations {
             moriya: BpListResult;
         }
     }
+    end_table: {
+        keys: any
+    };
 }
 
 interface BpListResult {
