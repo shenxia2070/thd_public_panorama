@@ -2,16 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { render, useGameEvent, useNetTableValues } from 'react-panorama-x';
 
 export const EndScreen = () => {
-    console.log('EndScreen!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.log('EndScreen!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    const [endTable, setEndTable] = useState(CustomNetTables.GetTableValue('end_table', 'keys'));
+    const [isOpen, setIsOpen] = useState(false);
     // @ts-ignore
     const dotaHud = $.GetContextPanel().GetParent().GetParent().GetParent().GetParent();
     // @ts-ignore
     dotaHud.FindChildTraverse('GameEndContainer').visible = false;
-    const [isOpen, setIsOpen] = useState(false);
     GameUI.SetDefaultUIEnabled(DotaDefaultUIElement_t.DOTA_DEFAULT_UI_ENDGAME, true);
-    const [endTable,setEndTable] = useState(CustomNetTables.GetTableValue('end_table', 'keys'));
-    console.log(endTable);
-    
+    // console.log(endTable.chenghao);
+
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -26,9 +26,9 @@ export const EndScreen = () => {
             console.log(`CustomNetTables.SubscribeNetTableListener`);
             setEndTable(CustomNetTables.GetTableValue('end_table', 'keys'));
         });
-        // 按Tab呼出商店
+        // 按Tab呼出面板
         (function () {
-            // $.Msg('按Tab呼出商店');
+            // $.Msg('按Tab呼出面板');
             var key = 'Tab';
             const command = 'WheelButton' + Math.floor(Math.random() * 99999999);
             Game.CreateCustomKeyBind(key, command);
@@ -37,10 +37,10 @@ export const EndScreen = () => {
                 () => {
                     const panel = $('#thd_end_screen');
                     console.log(panel);
-                    
+
                     if (!panel) return;
-                    panel.visible = !panel.visible;  
-                    setIsOpen(panel.visible);   
+                    panel.visible = !panel.visible;
+                    setIsOpen(panel.visible);
                 },
                 '',
                 0
@@ -59,8 +59,8 @@ export const EndScreen = () => {
         hakureiKills = endTable.hakureiKills;
         moriyaKills = endTable.moriyaKills;
     }
-    if (endTable != undefined) {
-        return useMemo(() => {
+    return useMemo(() => {
+        if (endTable != undefined) {
             return (
                 <Panel
                     id="thd_end_screen"
@@ -88,7 +88,9 @@ export const EndScreen = () => {
                         }}
                         text={`${winner}获胜`}
                     ></Label>
-                    <Panel style={{ width: 'fit-children', height: 'fit-children', horizontalAlign: 'center', marginTop: '2%', flowChildren: 'right' }}>
+                    <Panel
+                        style={{ width: 'fit-children', height: 'fit-children', horizontalAlign: 'center', marginTop: '2%', flowChildren: 'right' }}
+                    >
                         <Label text={`日期: ${dateString}  时长:${time} 分钟`} />
                     </Panel>
 
@@ -117,28 +119,29 @@ export const EndScreen = () => {
                     />
                 </Panel>
             );
-        }, [endTable]);
-    }else{
-        console.log('endTable == undefined');
-        
-        return <></>;
-    }
+        } else {
+            console.log('endTable == undefined');
+            return <></>;
+        }
+    }, [endTable]);
     function TeamDatasTitle() {
         return (
             <Panel style={{ width: 'fit-children', height: 'fit-children', flowChildren: 'right' }}>
                 <Panel style={{ width: 'fit-children', height: 'fit-children', flowChildren: 'down' }}>
                     <Panel style={{ width: 'fit-children', height: '48px', flowChildren: 'right' }}>
                         <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '30px' }} text={`RANK`} />
-                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '110px' }} text={`本场称号`} />
-                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '90px' }} text={`等级`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '70px' }} text={`本场称号`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '70px' }} text={`等级`} />
                         <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '80px' }} text={`组合`} />
-                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '200px' }} text={`K/D/A`} />
-                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '110px' }} text={`财产`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '180px' }} text={`K/D/A`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '70px' }} text={`财产`} />
                         <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '250px' }} text={`物品`} />
-                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '230px' }} text={`中立物品`} />
-                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '60px' }} text={`输出`} />
-                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '100px' }} text={`承受`} />
-                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '100px' }} text={`治疗`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '200px' }} text={`中立物品`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '40px' }} text={`输出`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '60px' }} text={`承受`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '60px' }} text={`治疗`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '60px' }} text={`GPM`} />
+                        <Label style={{ color: '#94E3E3', fontSize: '20px', verticalAlign: 'center', marginLeft: '60px' }} text={`XPM`} />
                     </Panel>
                 </Panel>
             </Panel>
@@ -154,6 +157,8 @@ export const EndScreen = () => {
                 }
             })
             .filter(player => player != undefined);
+
+        let PlayerID = LocalTeam[index] == undefined ? '' : LocalTeam[index].PlayerID;
         let heroName = LocalTeam[index] == undefined ? '' : LocalTeam[index].hero;
         let abiName = LocalTeam[index] == undefined ? '' : LocalTeam[index].normalSkill;
         let ultName = LocalTeam[index] == undefined ? '' : LocalTeam[index].ultimateSkill;
@@ -165,29 +170,55 @@ export const EndScreen = () => {
         let doneDamage = LocalTeam[index] == undefined ? '' : LocalTeam[index].doneDamage;
         let takeDamage = LocalTeam[index] == undefined ? '' : LocalTeam[index].takeDamage;
         let heal = LocalTeam[index] == undefined ? '' : LocalTeam[index].heal;
+        let gpm = LocalTeam[index] == undefined ? '' : LocalTeam[index].gpm;
+        let xpm = LocalTeam[index] == undefined ? '' : LocalTeam[index].xpm;
+
         return (
             <Panel style={{ width: 'fit-children', height: 'fit-children', flowChildren: 'right' }}>
                 <Panel style={{ width: 'fit-children', height: '64px', flowChildren: 'right' }}>
                     <Label className={`EndData`} style={{ width: '100px', marginLeft: '35px' }} text={score} />
-                    <Panel style={{ width: '200px', height: '48px', flowChildren: 'right' }}>{/* 称号 */}</Panel>
+                    <Panel style={{ width: '180px', height: '48px', flowChildren: 'right-wrap' }}>
+                        {/* 称号 */}
+                        {PlayerID !== '' &&
+                            Object.keys(endTable.chenghao).map((item: any) => {
+                                if (endTable.chenghao[item] == PlayerID) {
+                                    return (
+                                        <Image
+                                            key={`endtitle${item}`}
+                                            style={{ verticalAlign: 'center', horizontalAlign: 'left' }}
+                                            src={`file://{resources}/images/hud/end/title_${item}.png`}
+                                        />
+                                    );
+                                }
+                            })
+                        }
+                    </Panel>
                     {/* 等级 */}
                     <Label
                         className={`EndData`}
-                        style={{ width: '50px', color: '#94E3E3', marginLeft: '35px' }}
+                        style={{ width: '50px', color: '#94E3E3', marginLeft: '0px' }}
                         text={`${LocalTeam[index] == undefined ? '' : LocalTeam[index].lvl}`}
                     />
                     {/* 头像 */}
                     <Image
                         src={`s2r://panorama/images/heroes/thd2_${heroName}_png.vtex`}
                         className="hero_image"
-                        style={{ verticalAlign: 'center', marginLeft: '10px' }}
+                        style={{ verticalAlign: 'center', marginLeft: '0px' }}
                     ></Image>
                     {/* 技能 */}
-                    <DOTAAbilityImage style={{ verticalAlign: 'center', marginLeft: '5px' }} abilityname={abiName} showtooltip={true} />
-                    <DOTAAbilityImage style={{ verticalAlign: 'center', marginLeft: '5px' }} abilityname={ultName} showtooltip={true} />
-                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '70px' }} text={`${KDA}`} />
-                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '50px' }} text={`${gold}`} />
-                    <Panel style={{ width: 'fit-children', height: '100%', flowChildren: 'right', marginLeft: '10px' }}>
+                    <DOTAAbilityImage
+                        style={{ width: '64px', height: '64px', verticalAlign: 'center', marginLeft: '5px' }}
+                        abilityname={abiName}
+                        showtooltip={true}
+                    />
+                    <DOTAAbilityImage
+                        style={{ width: '64px', height: '64px', verticalAlign: 'center', marginLeft: '5px' }}
+                        abilityname={ultName}
+                        showtooltip={true}
+                    />
+                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '50px' }} text={`${KDA}`} />
+                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '30px' }} text={`${gold}`} />
+                    <Panel style={{ width: 'fit-children', height: '100%', flowChildren: 'right', marginLeft: '0px' }}>
                         {new Array(6).fill(0).map((item, index) => {
                             const itemname = items[index + 1];
                             return (
@@ -200,12 +231,14 @@ export const EndScreen = () => {
                         })}
                         <DOTAItemImage
                             itemname={neutralItem}
-                            style={{ width: '64px', height: '47px', verticalAlign: 'center', marginLeft: '55px' }}
+                            style={{ width: '64px', height: '47px', verticalAlign: 'center', marginLeft: '15px' }}
                         />
                     </Panel>
-                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '55px' }} text={`${doneDamage}`} />
-                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '40px' }} text={`${takeDamage}`} />
-                    <Label className={`EndData`} style={{ width: '120px', marginLeft: '40px' }} text={`${heal}`} />
+                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '35px', verticalAlign: 'center',horizontalAlign:'center' }} text={`${doneDamage}`} />
+                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '0px', verticalAlign: 'center',horizontalAlign:'center' }} text={`${takeDamage}`} />
+                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '10px', verticalAlign: 'center',horizontalAlign:'center' }} text={`${heal}`} />
+                    <Label className={`EndData`} style={{ width: '100px', marginLeft: '0px', verticalAlign: 'center',horizontalAlign:'center' }} text={`${gpm}`} />
+                    <Label className={`EndData`} style={{ width: '90px', marginLeft: '0px', verticalAlign: 'center',horizontalAlign:'center' }} text={`${xpm}`} />
                 </Panel>
             </Panel>
         );

@@ -103,7 +103,7 @@ export const OMGBP = () => {
             console.log(CustomNetTables.GetTableValue('react_table', 'bp_list_result'));
             
             // @ts-ignore
-            setBpListResultAll(CustomNetTables.GetTableValue('react_table', 'bp_list_result'));
+            // setBpListResultAll(CustomNetTables.GetTableValue('react_table', 'bp_list_result'));
         },
         3 // 0.05秒
     );
@@ -327,16 +327,15 @@ export const OMGBP = () => {
                     </Panel>
                     {new Array(5).fill(0).map((item, index) => {
                         return (
-                            <AgreeSwapPanel key={`AgreeSwapPanel_${Player_box_index}_${index + 1}`} Player_box_index={Player_box_index} index={index + 1} LocalPlayerBoxIndex={LocalPlayerBoxIndex}/>
+                            <AgreeSwapPanel key={`AgreeSwapPanel_${Player_box_index}_${index + 1}`} Player_box_index={Player_box_index} index={index + 1} LocalPlayerBoxIndex={LocalPlayerBoxIndex} BpListResultAll={BpListResultAll} />
                         )
                     })}
                 </Panel>
             </>
         );
     }
-    function AgreeSwapPanel({Player_box_index,index,LocalPlayerBoxIndex}:{Player_box_index:number,index:number,LocalPlayerBoxIndex:number}) {
+    function AgreeSwapPanel({Player_box_index,index,LocalPlayerBoxIndex,BpListResultAll}:{Player_box_index:number,index:number,LocalPlayerBoxIndex:number,BpListResultAll:BpListResultAll}) {
         const [LocalChangeReceiveList, setLocalChangeReceiveList] = useState<number[]>([]);
-        const BpListResultAll = CustomNetTables.GetTableValue('react_table', 'bp_list_result') as BpListResultAll;
         //@ts-ignore
         const State = useNetTableValues('react_table')?.react_table_state[1] as number;   
         const team = Game.GetLocalPlayerInfo().player_team_id;
@@ -372,6 +371,8 @@ export const OMGBP = () => {
             info_name = info.player_name;
         }
         return useMemo(() => {
+            // console.log(`${Player_box_index}的${index}号盒子的AgreeSwapPanel渲染,visibility是${visibility},buttonVisibility是${buttonVisibility}`);
+            
             return (
                 <Panel
                 key={`AgreeSwapButton_${Player_box_index}_${index}`}
@@ -398,7 +399,8 @@ export const OMGBP = () => {
     function PlayerData({ Player_box_index,prosPlayerSteamID,PlayerID }: { Player_box_index: number,prosPlayerSteamID:string ,PlayerID:PlayerID }) {
         const [PlayerSteamID, setPlayerSteamID] = useState('');
         // console.log(`prosPlayerSteamID是${prosPlayerSteamID}`);
-        
+        //@ts-ignore
+        const State = useNetTableValues('react_table')?.react_table_state[1] as number;   
         const BpListResultAll = useNetTableValues('react_table')?.bp_list_result as BpListResultAll;
         const string  = Game.GetPlayerInfo(PlayerID) ? Game.GetPlayerInfo(PlayerID).player_name : '未知玩家'
         // console.log(`id是${id},string是${string}`);
@@ -441,8 +443,8 @@ export const OMGBP = () => {
         // @ts-ignore
         const State = useNetTableValues('react_table')?.react_table_state[1] as number;
         const text = prosMyHeroName == undefined ? '' : $.Localize(`#${myHeroName}`);
-        CustomNetTables.SubscribeNetTableListener('react_table', () => {console.log(`检测到react_table发生变化`);
-        });
+        // CustomNetTables.SubscribeNetTableListener('react_table', () => {console.log(`检测到react_table发生变化`);
+        // });
         if (myHeroName != prosMyHeroName) {
             setmyHeroName(prosMyHeroName);
             // settext(text);
