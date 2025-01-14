@@ -54,7 +54,7 @@ export const EndScreen = () => {
     let hakureiKills = 0;
     let moriyaKills = 0;
     if (endTable != undefined) {
-        winner = '守矢';
+        if(endTable.winner == DOTATeam_t.DOTA_TEAM_BADGUYS){winner = '守矢'}
         time = Math.floor(endTable.time / 60);
         hakureiKills = endTable.hakureiKills;
         moriyaKills = endTable.moriyaKills;
